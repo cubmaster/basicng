@@ -1,0 +1,81 @@
+version: "3.7"
+
+volumes:
+  localvolume:
+    name: "localvolume"
+    driver: "local"
+  splunk:
+    name: "splunk"
+    driver: "local"
+
+networks:
+  dl_dev_network:
+    driver: bridge
+
+services:
+  rabbitmq:
+   image: rabbitmq:3.8.2-management
+#   build:
+#     context: ./rabbitmq
+#     dockerfile: DockerFile
+   ports:
+     - "15672:15672"
+     - "5672:5672"
+   networks:
+     - dl_dev_network
+#  environment:
+#     RABBITMQ_DEFAULT_VHOST: 
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - 6379:6379
+    networks:
+      - dl_dev_network
+
+  smtp:
+    image: mailhog/mailhog
+    container_name: 'mailhog'
+    ports:
+      - "25:1025"
+      - "8025:8025"
+    networks:
+      - dl_dev_network
+
+  db:
+    build:
+      context: .
+      dockerfile: local.sql.dockerfile
+    ports:
+    - "1433:1433"
+    environment:
+      SA_PASSWORD: "Password1"
+      ACCEPT_EULA: "Y"
+    volumes:
+    - localvolume:/var/opt/mssql
+    networks:
+    - dl_dev_network
+
+
+  splunk:
+    image: splunk/splunk:latest
+    environment:
+      SPLUNK_START_ARGS: --accept-license --answer-yes
+
+      SPLUNK_PASSWORD: Password1
+      SPLUNK_HEC_TOKEN: a7679afc-d141-4c9a-a9ec-ccf041b7525f
+      SPLUNK_DEFAULT_INDEX: main
+
+    volumes:
+    - splunk:/opt/splunk/etc
+    - splunk:/opt/splunk/var
+    ports:
+    - "8000:8000"
+    - "9997:9997"
+    - "8088:8088"
+    - "1514:1514"
+
+    networks:
+    - dl_dev_network
+
