@@ -44,9 +44,7 @@ services:
       - dl_dev_network
 
   db:
-    build:
-      context: .
-      dockerfile: local.sql.dockerfile
+    image: mcr.microsoft.com/mssql/server:2022-latest
     ports:
     - "1433:1433"
     environment:
